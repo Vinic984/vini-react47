@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { View, Text, Button, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 
 export default function DetailsScreen({ navigation }: any) {
   useEffect(() => {
@@ -15,7 +15,12 @@ export default function DetailsScreen({ navigation }: any) {
       <Text style={styles.text}>
         Esta é a tela de detalhes do aplicativo.
       </Text>
-      <Button title="Voltar para Início" onPress={() => navigation.navigate('Home')} />
+      <TouchableOpacity 
+        style={styles.button}
+        onPress={() => navigation.navigate('Home')}
+      >
+        <Text style={styles.buttonText}>Voltar para Início</Text>
+      </TouchableOpacity>
     </View>
   );
 }
@@ -36,5 +41,16 @@ const styles = StyleSheet.create({
     fontSize: 16,
     marginBottom: 20,
     textAlign: 'center',
+  },
+  button: {
+    backgroundColor: '#999',
+    borderRadius: 8,
+    padding: 14,
+    alignItems: 'center',
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });

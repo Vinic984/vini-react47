@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { View, Text, Button, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 
 export default function HomeScreen({ navigation }: any) {
   useEffect(() => {
@@ -12,10 +12,29 @@ export default function HomeScreen({ navigation }: any) {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Bem-vindo ao Meu Primeiro App!</Text>
-      <Button
-        title="Ir para Detalhes"
-        onPress={() => navigation.navigate('Details')}
-      />
+      
+      <View style={styles.buttonContainer}>
+        <TouchableOpacity
+          style={styles.button}
+          onPress={() => navigation.navigate('Details')}
+        >
+          <Text style={styles.buttonText}>Ir para Detalhes</Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity
+          style={[styles.button, styles.buttonGreen]}
+          onPress={() => navigation.navigate('Register')}
+        >
+          <Text style={styles.buttonText}>Cadastro de Usuários</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.button, styles.buttonBlue]}
+          onPress={() => navigation.navigate('List')}
+        >
+          <Text style={styles.buttonText}>Ver Cadastrados</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
@@ -30,6 +49,28 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 26,
     fontWeight: 'bold',
-    marginBottom: 10,
+    marginBottom: 40,
+    textAlign: 'center',
+  },
+  buttonContainer: {
+    width: '100%',
+  },
+  button: {
+    backgroundColor: '#999',
+    borderRadius: 8,
+    padding: 14,
+    marginBottom: 12,
+    alignItems: 'center',
+  },
+  buttonGreen: {
+    backgroundColor: '#4CAF50',
+  },
+  buttonBlue: {
+    backgroundColor: '#2196F3',
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });
