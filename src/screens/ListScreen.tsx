@@ -6,8 +6,10 @@ import {
   StyleSheet,
   Alert,
   TouchableOpacity,
+  Linking,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import syncPendingUsuarios from '../firebase/syncPending';
 
 interface Usuario {
   id: string;
@@ -160,9 +162,62 @@ export default function ListScreen({ navigation }: any) {
       <View style={styles.botoesContainer}>
         <TouchableOpacity
           style={styles.botaoNovo}
-          onPress={() => navigation.navigate('Register')}
+          onPress={() => {
+            try {
+              // debug: confirmar handler executado
+              // eslint-disable-next-line no-console
+              console.log('Botão NOVO CADASTRO clicado');
+              navigation.navigate('Register');
+            } catch (e) {
+              // eslint-disable-next-line no-console
+              console.error('Erro ao navegar para Register:', e);
+              Alert.alert('Erro', 'Não foi possível abrir a tela de cadastro: ' + String(e));
+            }
+          }}
         >
           <Text style={styles.botaoTexto}>NOVO CADASTRO</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.botaoNovo, { backgroundColor: '#2196F3' }]}
+          onPress={async () => {
+            try {
+              // debug: confirmar handler executado
+              // eslint-disable-next-line no-console
+              console.log('Botão SINCRONIZAR AGORA clicado');
+              const res = await syncPendingUsuarios();
+              Alert.alert('Sincronização', `Tentados: ${res.attempted}, sincronizados: ${res.synced}, falhas: ${res.failed}`);
+              // eslint-disable-next-line no-console
+              console.log('syncPending result:', JSON.stringify(res, null, 2));
+              if (res.errors && res.errors.length > 0) {
+                const primeiros = res.errors.slice(0, 5).map((e: any) => `${e.id || ''}: ${e.error || e}`);
+                // se houver erro indicando que o banco não existe, sugerir abrir Console
+                const anyNotFound = res.errors.some((e: any) => String(e.error).toLowerCase().includes('database (default) does not exist') || String(e.error).toLowerCase().includes('not_found'));
+                if (anyNotFound) {
+                  Alert.alert('Erro: banco não existe', 'O banco Firestore (default) não existe para este projeto. Abrindo Console do Google Cloud...');
+                  // abrir automaticamente a página de setup no Console do Google Cloud
+                  try {
+                    const url = `https://console.cloud.google.com/datastore/setup?project=${encodeURIComponent(String(process.env.FIREBASE_PROJECT_ID || 'crudreactnative-88c7b'))}`;
+                    // eslint-disable-next-line no-console
+                    console.log('Abrindo Console para criar Firestore:', url);
+                    Linking.openURL(url);
+                  } catch (openErr) {
+                    // eslint-disable-next-line no-console
+                    console.error('Falha ao abrir Console URL:', openErr);
+                  }
+                } else {
+                  Alert.alert('Erros de sincronização (exemplos)', primeiros.join('\n'));
+                }
+              }
+              await carregarDados();
+            } catch (e) {
+              // eslint-disable-next-line no-console
+              console.error('Erro no handler SINCRONIZAR AGORA:', e);
+              Alert.alert('Erro', 'Falha ao sincronizar: ' + String(e));
+            }
+          }}
+        >
+          <Text style={styles.botaoTexto}>SINCRONIZAR AGORA</Text>
         </TouchableOpacity>
 
         {mostrarBotaoLimpar ? (
@@ -176,7 +231,18 @@ export default function ListScreen({ navigation }: any) {
 
         <TouchableOpacity
           style={styles.botaoVoltar}
-          onPress={() => navigation.goBack()}
+          onPress={() => {
+            try {
+              // debug
+              // eslint-disable-next-line no-console
+              console.log('Botão VOLTAR clicado');
+              navigation.goBack();
+            } catch (e) {
+              // eslint-disable-next-line no-console
+              console.error('Erro ao voltar:', e);
+              Alert.alert('Erro', 'Não foi possível voltar: ' + String(e));
+            }
+          }}
         >
           <Text style={styles.botaoTexto}>VOLTAR</Text>
         </TouchableOpacity>

@@ -13,14 +13,7 @@ export default function HomeScreen({ navigation }: any) {
     <View style={styles.container}>
       <Text style={styles.title}>Bem-vindo ao Meu Primeiro App!</Text>
       
-      <View style={styles.buttonContainer}>
-        <TouchableOpacity
-          style={styles.button}
-          onPress={() => navigation.navigate('Details')}
-        >
-          <Text style={styles.buttonText}>Ir para Detalhes</Text>
-        </TouchableOpacity>
-        
+
         <TouchableOpacity
           style={[styles.button, styles.buttonGreen]}
           onPress={() => navigation.navigate('Register')}
@@ -35,7 +28,6 @@ export default function HomeScreen({ navigation }: any) {
           <Text style={styles.buttonText}>Ver Cadastrados</Text>
         </TouchableOpacity>
       </View>
-    </View>
   );
 }
 

@@ -7,7 +7,10 @@ import {
   ScrollView,
   Alert,
   TouchableOpacity,
+  Linking,
 } from 'react-native';
+import { collection, addDoc, getDocs } from 'firebase/firestore';
+import { db, firebaseConfig, saveUsuarioRest } from '../firebase/firebaseConfig';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function RegisterScreen({ navigation }: any) {
@@ -75,24 +78,109 @@ export default function RegisterScreen({ navigation }: any) {
         data: new Date().toLocaleDateString('pt-BR'),
       };
 
-      const dados = await AsyncStorage.getItem('usuarios');
-      let usuarios: any = [];
+      // Salvar localmente primeiro (garante persistência offline)
+      let localSaved = false;
+      try {
+        const dados = await AsyncStorage.getItem('usuarios');
+        let usuarios: any = [];
 
-      if (dados) {
-        try {
-          usuarios = JSON.parse(dados);
-          if (!Array.isArray(usuarios)) {
+        if (dados) {
+          try {
+            usuarios = JSON.parse(dados);
+            if (!Array.isArray(usuarios)) usuarios = [];
+          } catch (e) {
             usuarios = [];
           }
-        } catch (e) {
-          usuarios = [];
         }
+
+        // marcar como pendente
+        const pendente = { ...novoUsuario, _synced: false };
+        usuarios.push(pendente);
+        await AsyncStorage.setItem('usuarios', JSON.stringify(usuarios));
+        localSaved = true;
+        // eslint-disable-next-line no-console
+        console.log('Dados salvos localmente (AsyncStorage).');
+      } catch (localErr) {
+        // eslint-disable-next-line no-console
+        console.error('Falha ao salvar localmente:', localErr);
+      }
+      // debug: mostrar que vamos tentar gravar e capturar referência do documento
+      // eslint-disable-next-line no-console
+      console.log('Tentando gravar usuário no Firestore:', novoUsuario);
+
+      // Teste de leitura antes da gravação para detectar problemas de permissão/conexão
+      try {
+        const snapshot = await getDocs(collection(db, 'usuarios'));
+        // eslint-disable-next-line no-console
+        console.log('Leitura de teste: documentos em usuarios =', snapshot.size);
+      } catch (readErr) {
+        // eslint-disable-next-line no-console
+        console.error('Erro ao ler coleção usuarios antes de gravar:', readErr);
       }
 
-      usuarios.push(novoUsuario);
-      await AsyncStorage.setItem('usuarios', JSON.stringify(usuarios));
+      // Tentar addDoc com timeout — se travar, caímos no fallback REST
+      // Usar REST diretamente (mais confiável em Expo managed). saveUsuarioRest grava usando o id local
+      let docRef: any = null;
+      try {
+        const json = await saveUsuarioRest(novoUsuario);
+        // json.name = projects/.../documents/usuarios/{id}
+        const docId = json.name?.split('/').pop() || novoUsuario.id;
+        docRef = { id: docId };
 
-      Alert.alert('Sucesso', 'Cadastro realizado com sucesso!');
+        // marcar como sincronizado no AsyncStorage
+        try {
+          const dados = await AsyncStorage.getItem('usuarios');
+          if (dados) {
+            const usuarios = JSON.parse(dados);
+            const idx = usuarios.findIndex((u: any) => u.id === novoUsuario.id);
+            if (idx !== -1) {
+              usuarios[idx]._synced = true;
+              await AsyncStorage.setItem('usuarios', JSON.stringify(usuarios));
+            }
+          }
+        } catch (e) {
+          // eslint-disable-next-line no-console
+          console.error('Erro ao marcar _synced localmente:', e);
+        }
+      } catch (e: any) {
+        // eslint-disable-next-line no-console
+        console.error('Gravação via REST falhou:', e);
+        // mostrar erro detalhado ao usuário para diagnóstico
+        try {
+          const message = e?.body ? JSON.stringify(e.body) : e?.message || String(e);
+          // se a mensagem indicar que o DB default não existe, oferecer abrir Console
+          const lower = String(message).toLowerCase();
+          if (lower.includes('database (default) does not exist') || lower.includes('not_found')) {
+            Alert.alert('Erro ao enviar para Firebase', 'O banco Firestore (default) não existe para este projeto. Abrindo Console do Google Cloud...');
+            try {
+              const url = `https://console.cloud.google.com/datastore/setup?project=${encodeURIComponent(String(process.env.FIREBASE_PROJECT_ID || 'crudreactnative-88c7b'))}`;
+              // eslint-disable-next-line no-console
+              console.log('Abrindo Console para criar Firestore:', url);
+              Linking.openURL(url);
+            } catch (openErr) {
+              // eslint-disable-next-line no-console
+              console.error('Falha ao abrir Console URL:', openErr);
+              Alert.alert('Erro', message);
+            }
+          } else {
+            Alert.alert('Erro ao enviar para Firebase', message);
+          }
+        } catch (alertErr) {
+          // ignore
+        }
+        docRef = null;
+      }
+
+      // eslint-disable-next-line no-console
+      console.log('Documento gravado com ID:', docRef?.id);
+
+      if (docRef && docRef.id) {
+        Alert.alert('Sucesso', `Cadastro realizado com sucesso! (ID: ${docRef.id})`);
+      } else if (localSaved) {
+        Alert.alert('Sucesso local', 'Dados salvos localmente, não foi possível enviar para o Firebase no momento.');
+      } else {
+        Alert.alert('Erro', 'Não foi possível salvar os dados localmente nem no Firebase.');
+      }
 
       setNome('');
       setEmail('');
@@ -102,8 +190,10 @@ export default function RegisterScreen({ navigation }: any) {
       setTelefoneError(false);
 
       navigation.navigate('List');
-    } catch (erro) {
-      Alert.alert('Erro', 'Não foi possível salvar os dados');
+    } catch (erro: any) {
+      // eslint-disable-next-line no-console
+      console.error('Erro ao salvar no Firestore:', erro);
+      Alert.alert('Erro', `Não foi possível salvar os dados: ${erro?.message || erro}`);
     }
   };
 

@@ -9,7 +9,7 @@ const Stack = createNativeStackNavigator();
 
 export default function AppNavigator() {
   return (
-    <Stack.Navigator
+    <Stack.Navigator id="root"
       screenOptions={{
         headerShown: true,
         headerBackVisible: true,
