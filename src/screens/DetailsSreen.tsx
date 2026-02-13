@@ -1,26 +1,20 @@
-import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import React from 'react';
+import { View, Text, StyleSheet } from 'react-native';
 
-export default function DetailsScreen({ navigation }: any) {
-  useEffect(() => {
-    console.log('DetailsScreen montado');
-    return () => {
-      console.log('DetailsScreen desmontado');
-    };
-  }, []);
+export default function DetailsScreen({ route }: any) {
+  const { userId, userName } = route.params || {};
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Tela de Detalhes</Text>
-      <Text style={styles.text}>
-        Esta é a tela de detalhes do aplicativo.
-      </Text>
-      <TouchableOpacity 
-        style={styles.button}
-        onPress={() => navigation.navigate('Home')}
-      >
-        <Text style={styles.buttonText}>Voltar para Início</Text>
-      </TouchableOpacity>
+      <Text style={styles.title}>📋 Detalhes do Usuário</Text>
+      
+      <View style={styles.card}>
+        <Text style={styles.label}>ID:</Text>
+        <Text style={styles.value}>{userId || 'Não informado'}</Text>
+        
+        <Text style={styles.label}>Nome:</Text>
+        <Text style={styles.value}>{userName || 'Não informado'}</Text>
+      </View>
     </View>
   );
 }
@@ -31,26 +25,34 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
+    backgroundColor: '#f5f5f5',
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    marginBottom: 10,
+    marginBottom: 30,
+    color: '#333',
   },
-  text: {
+  card: {
+    backgroundColor: '#fff',
+    padding: 20,
+    borderRadius: 10,
+    width: '100%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  label: {
+    fontSize: 14,
+    color: '#666',
+    marginTop: 10,
+  },
+  value: {
     fontSize: 16,
-    marginBottom: 20,
-    textAlign: 'center',
-  },
-  button: {
-    backgroundColor: '#999',
-    borderRadius: 8,
-    padding: 14,
-    alignItems: 'center',
-  },
-  buttonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
+    color: '#333',
+    fontWeight: '500',
+    marginBottom: 5,
   },
 });

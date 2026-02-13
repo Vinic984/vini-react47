@@ -1,252 +1,49 @@
-import React, { useEffect, useState } from 'react';
-import {
-  View,
-  Text,
-  FlatList,
-  StyleSheet,
-  Alert,
-  TouchableOpacity,
-  Linking,
-} from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import syncPendingUsuarios from '../firebase/syncPending';
-
-interface Usuario {
-  id: string;
-  nome: string;
-  email: string;
-  telefone: string;
-  data: string;
-}
 
 export default function ListScreen({ navigation }: any) {
-  const [usuarios, setUsuarios] = useState<Usuario[]>([]);
-  const [carregando, setCarregando] = useState(true);
+  const [usuarios, setUsuarios] = useState<any[]>([]);
 
   useEffect(() => {
-    const unsubscribe = navigation.addListener('focus', () => {
-      carregarDados();
-    });
+    carregarUsuarios();
+  }, []);
 
-    return unsubscribe;
-  }, [navigation]);
-
-  const carregarDados = async () => {
-    try {
-      setCarregando(true);
-      const dadosArmazenados = await AsyncStorage.getItem('usuarios');
-      
-      if (dadosArmazenados) {
-        try {
-          const usuariosParseados: Usuario[] = JSON.parse(dadosArmazenados);
-          setUsuarios(usuariosParseados);
-        } catch (e) {
-          setUsuarios([]);
-        }
-      } else {
-        setUsuarios([]);
-      }
-    } catch (erro) {
-      Alert.alert('Erro', 'Não foi possível carregar os dados');
-      console.error(erro);
-    } finally {
-      setCarregando(false);
+  const carregarUsuarios = async () => {
+    const dados = await AsyncStorage.getItem('usuarios');
+    if (dados) {
+      const lista = JSON.parse(dados);
+      setUsuarios(lista);
     }
   };
 
-  const deletarUsuario = async (id: string) => {
-    Alert.alert(
-      'Confirmar exclusão',
-      'Tem certeza que deseja deletar este cadastro?',
-      [
-        {
-          text: 'Cancelar',
-          onPress: () => {},
-        },
-        {
-          text: 'Deletar',
-          onPress: async () => {
-            try {
-              const usuariosFiltrados = usuarios.filter((u) => u.id !== id);
-              await AsyncStorage.setItem('usuarios', JSON.stringify(usuariosFiltrados));
-              setUsuarios(usuariosFiltrados);
-              Alert.alert('Sucesso', 'Cadastro deletado com sucesso!');
-            } catch (erro) {
-              Alert.alert('Erro', 'Não foi possível deletar o cadastro');
-              console.error(erro);
-            }
-          },
-        },
-      ]
-    );
-  };
-
-  const limparTodos = async () => {
-    Alert.alert(
-      'Limpar todos',
-      'Tem certeza que deseja deletar TODOS os cadastros?',
-      [
-        {
-          text: 'Cancelar',
-          onPress: () => {},
-        },
-        {
-          text: 'Deletar Tudo',
-          onPress: async () => {
-            try {
-              await AsyncStorage.removeItem('usuarios');
-              setUsuarios([]);
-              Alert.alert('Sucesso', 'Todos os cadastros foram deletados!');
-            } catch (erro) {
-              Alert.alert('Erro', 'Não foi possível limpar os dados');
-              console.error(erro);
-            }
-          },
-        },
-      ]
-    );
-  };
-
-  const renderizarUsuario = ({ item }: { item: Usuario }) => (
-    <View style={styles.card}>
-      <View style={styles.cardContent}>
-        <Text style={styles.cardNome}>{item.nome}</Text>
-        <Text style={styles.cardTexto}>
-          <Text style={styles.label}>Email:</Text> {item.email}
-        </Text>
-        <Text style={styles.cardTexto}>
-          <Text style={styles.label}>Telefone:</Text> {item.telefone}
-        </Text>
-        <Text style={styles.cardTexto}>
-          <Text style={styles.label}>Data:</Text> {item.data}
-        </Text>
-      </View>
-      <TouchableOpacity
-        style={styles.botaoDeletar}
-        onPress={() => deletarUsuario(item.id)}
-      >
-        <Text style={styles.textoBotaoDeletar}>Deletar</Text>
-      </TouchableOpacity>
-    </View>
+  const renderItem = ({ item, index }: { item: any; index: number }) => (
+    <TouchableOpacity
+      style={styles.item}
+      onPress={() => navigation.navigate('Details', {
+        userId: index,
+        userName: item.name
+      })}
+    >
+      <Text style={styles.name}>{item.name || 'Sem nome'}</Text>
+      <Text style={styles.email}>{item.email}</Text>
+    </TouchableOpacity>
   );
-
-  if (carregando) {
-    return (
-      <View style={styles.container}>
-        <Text style={styles.titulo}>Carregando...</Text>
-      </View>
-    );
-  }
-
-  const mostrarFlatList = usuarios.length > 0;
-  const mostrarBotaoLimpar = usuarios.length > 0;
 
   return (
     <View style={styles.container}>
-      <Text style={styles.titulo}>Usuários Cadastrados</Text>
-      <Text style={styles.contador}>{usuarios.length} cadastro(s)</Text>
-
-      {mostrarFlatList ? (
+      <Text style={styles.title}>👥 Usuários Cadastrados</Text>
+      
+      {usuarios.length > 0 ? (
         <FlatList
           data={usuarios}
-          renderItem={renderizarUsuario}
-          keyExtractor={(item) => item.id}
-          style={styles.lista}
+          renderItem={renderItem}
+          keyExtractor={(_, index) => index.toString()}
+          contentContainerStyle={styles.list}
         />
       ) : (
-        <View style={styles.vazioContainer}>
-          <Text style={styles.textoVazio}>Nenhum cadastro realizado ainda</Text>
-        </View>
+        <Text style={styles.empty}>Nenhum usuário cadastrado</Text>
       )}
-
-      <View style={styles.botoesContainer}>
-        <TouchableOpacity
-          style={styles.botaoNovo}
-          onPress={() => {
-            try {
-              // debug: confirmar handler executado
-              // eslint-disable-next-line no-console
-              console.log('Botão NOVO CADASTRO clicado');
-              navigation.navigate('Register');
-            } catch (e) {
-              // eslint-disable-next-line no-console
-              console.error('Erro ao navegar para Register:', e);
-              Alert.alert('Erro', 'Não foi possível abrir a tela de cadastro: ' + String(e));
-            }
-          }}
-        >
-          <Text style={styles.botaoTexto}>NOVO CADASTRO</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.botaoNovo, { backgroundColor: '#2196F3' }]}
-          onPress={async () => {
-            try {
-              // debug: confirmar handler executado
-              // eslint-disable-next-line no-console
-              console.log('Botão SINCRONIZAR AGORA clicado');
-              const res = await syncPendingUsuarios();
-              Alert.alert('Sincronização', `Tentados: ${res.attempted}, sincronizados: ${res.synced}, falhas: ${res.failed}`);
-              // eslint-disable-next-line no-console
-              console.log('syncPending result:', JSON.stringify(res, null, 2));
-              if (res.errors && res.errors.length > 0) {
-                const primeiros = res.errors.slice(0, 5).map((e: any) => `${e.id || ''}: ${e.error || e}`);
-                // se houver erro indicando que o banco não existe, sugerir abrir Console
-                const anyNotFound = res.errors.some((e: any) => String(e.error).toLowerCase().includes('database (default) does not exist') || String(e.error).toLowerCase().includes('not_found'));
-                if (anyNotFound) {
-                  Alert.alert('Erro: banco não existe', 'O banco Firestore (default) não existe para este projeto. Abrindo Console do Google Cloud...');
-                  // abrir automaticamente a página de setup no Console do Google Cloud
-                  try {
-                    const url = `https://console.cloud.google.com/datastore/setup?project=${encodeURIComponent(String(process.env.FIREBASE_PROJECT_ID || 'crudreactnative-88c7b'))}`;
-                    // eslint-disable-next-line no-console
-                    console.log('Abrindo Console para criar Firestore:', url);
-                    Linking.openURL(url);
-                  } catch (openErr) {
-                    // eslint-disable-next-line no-console
-                    console.error('Falha ao abrir Console URL:', openErr);
-                  }
-                } else {
-                  Alert.alert('Erros de sincronização (exemplos)', primeiros.join('\n'));
-                }
-              }
-              await carregarDados();
-            } catch (e) {
-              // eslint-disable-next-line no-console
-              console.error('Erro no handler SINCRONIZAR AGORA:', e);
-              Alert.alert('Erro', 'Falha ao sincronizar: ' + String(e));
-            }
-          }}
-        >
-          <Text style={styles.botaoTexto}>SINCRONIZAR AGORA</Text>
-        </TouchableOpacity>
-
-        {mostrarBotaoLimpar ? (
-          <TouchableOpacity
-            style={styles.botaoLimpar}
-            onPress={limparTodos}
-          >
-            <Text style={styles.botaoTexto}>LIMPAR TODOS</Text>
-          </TouchableOpacity>
-        ) : null}
-
-        <TouchableOpacity
-          style={styles.botaoVoltar}
-          onPress={() => {
-            try {
-              // debug
-              // eslint-disable-next-line no-console
-              console.log('Botão VOLTAR clicado');
-              navigation.goBack();
-            } catch (e) {
-              // eslint-disable-next-line no-console
-              console.error('Erro ao voltar:', e);
-              Alert.alert('Erro', 'Não foi possível voltar: ' + String(e));
-            }
-          }}
-        >
-          <Text style={styles.botaoTexto}>VOLTAR</Text>
-        </TouchableOpacity>
-      </View>
     </View>
   );
 }
@@ -254,108 +51,41 @@ export default function ListScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
+    padding: 20,
     backgroundColor: '#f5f5f5',
   },
-  titulo: {
-    fontSize: 28,
+  title: {
+    fontSize: 24,
     fontWeight: 'bold',
-    marginBottom: 8,
-    color: '#333',
-    textAlign: 'center',
-  },
-  contador: {
-    fontSize: 14,
-    color: '#888',
-    textAlign: 'center',
     marginBottom: 20,
-  },
-  lista: {
-    flex: 1,
-  },
-  card: {
-    backgroundColor: '#fff',
-    borderRadius: 8,
-    padding: 16,
-    marginBottom: 12,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  cardContent: {
-    flex: 1,
-    marginRight: 12,
-  },
-  cardNome: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 8,
-  },
-  cardTexto: {
-    fontSize: 13,
-    color: '#666',
-    marginBottom: 4,
-  },
-  label: {
-    fontWeight: '600',
     color: '#333',
   },
-  botaoDeletar: {
-    backgroundColor: '#f44336',
-    borderRadius: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-  },
-  textoBotaoDeletar: {
-    color: '#fff',
-    fontWeight: '600',
-    fontSize: 12,
-  },
-  vazioContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  textoVazio: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#888',
-    textAlign: 'center',
-  },
-  botoesContainer: {
-    borderTopWidth: 1,
-    borderTopColor: '#ddd',
-    paddingTop: 16,
+  list: {
     paddingBottom: 20,
   },
-  botaoWrapper: {
-    marginBottom: 12,
-  },
-  botaoNovo: {
-    backgroundColor: '#4CAF50',
+  item: {
+    backgroundColor: '#fff',
+    padding: 15,
     borderRadius: 8,
-    padding: 14,
-    marginBottom: 12,
-    alignItems: 'center',
+    marginBottom: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
   },
-  botaoLimpar: {
-    backgroundColor: '#f44336',
-    borderRadius: 8,
-    padding: 14,
-    marginBottom: 12,
-    alignItems: 'center',
-  },
-  botaoVoltar: {
-    backgroundColor: '#757575',
-    borderRadius: 8,
-    padding: 14,
-    marginBottom: 12,
-    alignItems: 'center',
-  },
-  botaoTexto: {
-    color: '#fff',
+  name: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: 'bold',
+    marginBottom: 5,
+  },
+  email: {
+    fontSize: 14,
+    color: '#666',
+  },
+  empty: {
+    textAlign: 'center',
+    color: '#999',
+    marginTop: 50,
   },
 });

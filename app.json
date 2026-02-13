@@ -1,25 +1,32 @@
 {
   "expo": {
-    "name": "MeuPrimeiroApp",
-    "slug": "meuprimeiroapp",
+    "entryPoint": "index.js",
+    "name": "vini-react47",
+    "slug": "vini-react47",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
-    "platforms": ["ios", "android", "web"],
     "ios": {
-      "bundleIdentifier": "com.example.meuprimeiroapp"
+      "supportsTablet": true
     },
     "android": {
-      "package": "com.example.meuprimeiroapp",
-      "versionCode": 1
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      }
     },
     "web": {
-      "bundler": "metro"
-    }
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "@react-native-firebase/app",
+      "@react-native-firebase/auth"
+    ]
   }
 }

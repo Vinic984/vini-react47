@@ -1,23 +1,23 @@
-import { initializeApp } from '@react-native-firebase/app';
-import auth from '@react-native-firebase/auth';
-import firestore from '@react-native-firebase/firestore';
-import storage from '@react-native-firebase/storage';
+// Usando Firebase nativo para React Native
+import { initializeApp } from 'firebase/app';
+import { getAuth } from 'firebase/auth';
+import { getFirestore } from 'firebase/firestore';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
+// ✅ Suas credenciais direto
 const firebaseConfig = {
-  apiKey: process.env.FIREBASE_API_KEY,
-  authDomain: process.env.FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.FIREBASE_PROJECT_ID,
-  storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.FIREBASE_APP_ID,
-  measurementId: process.env.FIREBASE_MEASUREMENT_ID,
+  apiKey: "AIzaSyBz0uWpqsqmxUYNW_RcKa0EUWJwxyuY",
+  authDomain: "crudreactnative-1b7bc.firebaseapp.com",
+  projectId: "crudreactnative-1b7bc",
+  storageBucket: "crudreactnative-1b7bc.firebasestorage.app",
+  messagingSenderId: "447035825188",
+  appId: "1:447035825188:web:24f533f37cc04e7ae653d9",
+  measurementId: "GL-ZLWCP130K3"
 };
 
-// Inicializar Firebase (já é feito automaticamente, mas pode ser explícito)
+// Serviços
 const app = initializeApp(firebaseConfig);
-
-// Exportar módulos para usar em toda a app
-export { auth, firestore, storage, app };
-
+export const auth = getAuth(app);
+export const db = getFirestore(app);
+export { AsyncStorage };
 export default app;
-console.log("🔥 Firebase projectId:", process.env.FIREBASE_PROJECT_ID);
