@@ -4,11 +4,11 @@ import { collection, addDoc } from 'firebase/firestore';
 
 export default async function syncPendingUsuarios() {
   try {
-    console.log(' Iniciando sincronização de pendentes...');
+    console.log('Iniciando sincronização de usuários pendentes...');
     
     const dados = await AsyncStorage.getItem('usuarios');
     if (!dados) {
-      console.log(' Nenhum usuário local para sincronizar.');
+      console.log('Nenhum usuário local para sincronizar.');
       return { attempted: 0, synced: 0, failed: 0, errors: [] };
     }
 
@@ -17,7 +17,7 @@ export default async function syncPendingUsuarios() {
       usuarios = JSON.parse(dados);
       if (!Array.isArray(usuarios)) usuarios = [];
     } catch (e) {
-      console.error(' Erro ao parsear usuários:', e);
+      console.error('Erro ao parsear usuários:', e);
       return { attempted: 0, synced: 0, failed: 1, errors: [e] };
     }
 
@@ -27,7 +27,7 @@ export default async function syncPendingUsuarios() {
 
     for (const usuario of usuarios) {
       try {
-        await addDoc(collection(db, 'usuarios'), usuario);
+        await addDoc(collection(db, 'users'), usuario);
         synced++;
       } catch (err) {
         failed++;
@@ -38,11 +38,11 @@ export default async function syncPendingUsuarios() {
     // Limpa após sincronizar
     await AsyncStorage.removeItem('usuarios');
 
-    console.log(` Sincronização concluída: ${synced} sucesso, ${failed} falhas`);
+    console.log(`Sincronização concluída: ${synced} sucesso, ${failed} falhas`);
     return { attempted: usuarios.length, synced, failed, errors };
     
   } catch (error) {
-    console.error(' Erro geral na sincronização:', error);
+    console.error('Erro geral na sincronização:', error);
     return { attempted: 0, synced: 0, failed: 1, errors: [error] };
   }
 }

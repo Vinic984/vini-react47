@@ -1,10 +1,10 @@
-// Usando Firebase nativo para React Native
+// Configuração Firebase para Expo com Firebase Web SDK
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// ✅ Suas credenciais direto
+// Configuração do Firebase
 const firebaseConfig = {
   apiKey: "AIzaSyBz0uWpqsqmxUYNW_RcKa0EUWJwxyuY",
   authDomain: "crudreactnative-1b7bc.firebaseapp.com",
@@ -15,8 +15,10 @@ const firebaseConfig = {
   measurementId: "GL-ZLWCP130K3"
 };
 
-// Serviços
+// Inicializa o Firebase
 const app = initializeApp(firebaseConfig);
+
+// Exporta os serviços
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 export { AsyncStorage };
